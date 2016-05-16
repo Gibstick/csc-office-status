@@ -65,7 +65,7 @@ exec racket -u "${0}" ${1+"${@}"}
               [(5) "Unknown. Could not fetch webcam stream."]
               [else (format "Unknown. Script exited with status ~a." status)])
             )
-           (p 'class: "footer" (format "Last checked: ~a (local server time)"
+           (p 'class: "footer" (format "Last checked: ~a"
                                        (date->string timestamp #t)))
            (a 'class: "footer" 'href: (history-file) "History")
            )
