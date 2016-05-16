@@ -1,1 +1,2 @@
 DirectoryIndex office-status.html
+AddType text/plain .csv
