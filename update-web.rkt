@@ -30,7 +30,7 @@ exec racket -u "${0}" ${1+"${@}"}
 ;; (handle-break exn) prints out a message and exits with status 0.
 ;;   The argument exn is ignored.
 (define (handle-break exn)
-  (displayln "Quitting.")
+  (displayln "Caught break exception." (current-error-port))
   (exit 0))
 
 
@@ -94,7 +94,7 @@ exec racket -u "${0}" ${1+"${@}"}
 (module+ main
   ;; check for existence of lock file
   (when (file-exists? (lock-file))
-    (displayln "Lock file already exists! Exiting." (current-error-port))
+    (displayln "Lock file already exists! Exiting.") 
     (exit 0))
   
   ;; create lock file
@@ -105,6 +105,7 @@ exec racket -u "${0}" ${1+"${@}"}
   (exit-handler
    (lambda (x)
      (remove-lock)
+     (displayln "Quitting." (current-error-port))
      (default-exit-handler x)))
   
   
