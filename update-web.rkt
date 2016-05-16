@@ -76,6 +76,7 @@ exec racket -u "${0}" ${1+"${@}"}
 ;;   to the current output port.
 (define (output-page page)
   (lambda (tmp-port tmp-path-ignored)
+    (output-xml (doctype 'html) tmp-port)
     (output-xml page tmp-port)))
 
 ;; (output-log-line status timestamp) uses the script's return
