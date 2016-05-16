@@ -3,11 +3,13 @@
 raco make "${0}" &&
 exec racket -u "${0}" ${1+"${@}"}
 |#
-#lang racket
+#lang racket/base
 
 (require scribble/html/html) ; generating HTML
 (require scribble/html/xml)  ; outputting XML
 (require racket/date)        ; date output
+(require racket/system)      ; system
+(require racket/file)
 
 ;; parameter for lock file
 (define lock-file (make-parameter ".office-lock"))
@@ -102,14 +104,11 @@ exec racket -u "${0}" ${1+"${@}"}
     (let loop ()
       
       ;; call the worker script
-      (define-values (proc in-port out-port err-port)
-        (subprocess #f #f #f "sh openoffice.sh"))
-      (subprocess-wait proc)
       
       (call-with-atomic-output-file
        (output-file)
-       (output-page (generate-page (subprocess-status proc)
-                                   (date->string (current-date) true))))
+       (output-page (generate-page (system/exit-code "./openoffice.sh")
+                                   (date->string (current-date) #t))))
       
       (sleep 29)
       (loop))))
