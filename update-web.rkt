@@ -9,7 +9,7 @@ exec racket -u "${0}" ${1+"${@}"}
 (require scribble/html/xml)  ; outputting XML
 (require racket/date)        ; date output
 (require racket/system)      ; system
-(require racket/file)
+(require racket/file)        ; file utils
 
 ;; parameter for lock file
 (define lock-file (make-parameter ".office-lock"))
@@ -22,7 +22,7 @@ exec racket -u "${0}" ${1+"${@}"}
 ;; parameter for css file
 (define css-path (make-parameter "style.css"))
 ;; parmater for history file path
-(define history-file (make-parameter "./office-status-history.json"))
+(define history-file (make-parameter "./office-status-history.csv"))
 
 ;; default exit handler
 (define default-exit-handler (exit-handler))
@@ -40,38 +40,54 @@ exec racket -u "${0}" ${1+"${@}"}
   (when (file-exists? (lock-file))
     (delete-file (lock-file))))
 
-
-(define (generate-page status last-checked)
-  (html 'lang: "en"
-        (head
-         (meta 'http-equiv: "refresh" 'content: (refresh-interval))
-         (element 'link 'rel: "stylesheet" 'href: (css-path))
-         (title
-          (case status
-            [(0) "Open"]
-            [(1) "Closed"]
-            [else "Unknown"])
+;; (generate-page status timestamp) produces a string of the page's HTML
+;;   ready to be written to a file, using the script's return status
+;;   and timestamp.
+(define (generate-page status timestamp)
+  (parameterize ([date-display-format 'rfc2822])
+    (html 'lang: "en"
+          (head
+           (meta 'http-equiv: "refresh" 'content: (refresh-interval))
+           (element 'link 'rel: "stylesheet" 'href: (css-path))
+           (title
+            (case status
+              [(0) "Open"]
+              [(1) "Closed"]
+              [else "Unknown"])
+            )
+           )
+          (body
+           (h1 "Is the CSC office open?")
+           (p
+            (case status
+              [(0) "Yes."]
+              [(1) "No."]
+              [(5) "Unknown. Could not fetch webcam stream."]
+              [else (format "Unknown. Script exited with status ~a." status)])
+            )
+           (p 'class: "footer" (format "Last checked: ~a (local server time)"
+                                       (date->string timestamp #t)))
+           (a 'class: "footer" 'href: (history-file) "History")
+           )
           )
-         )
-        (body
-         (h1 "Is the CSC office open?")
-         (p
-          (case status
-            [(0) "Yes."]
-            [(1) "No."]
-            [(5) "Unknown. Could not fetch webcam stream."]
-            [else (format "Unknown. Script exited with status ~a." status)])
-          )
-         (p 'class: "footer" (format "Last checked: ~a (local server time)"
-                                     last-checked))
-         (a 'class: "footer" 'href: (history-file) "History")
-         )
-        )
-  )
+    ))
 
+;; (output-page page) writes the HTML string page
+;;   to the current output port.
 (define (output-page page)
   (lambda (tmp-port tmp-path-ignored)
     (output-xml page tmp-port)))
+
+;; (output-log-line status timestamp) uses the script's return
+;;   status and timestamp to append a line to the log file in csv format.
+(define (output-log-line status timestamp)
+  (parameterize ([date-display-format 'iso-8601])
+    (printf "~a,~a\n"
+            (date->string timestamp #t)
+            (case status
+              [(0) "open"]
+              [(1) "closed"]
+              [else (format "error ~a" status)]))))
 
 
 (module+ main
@@ -81,12 +97,8 @@ exec racket -u "${0}" ${1+"${@}"}
     (exit 0))
   
   ;; create lock file
-  (begin
-    (open-output-file (lock-file))
-    (void))
+  (define lock (open-output-file (lock-file)))
   
-  ;; set date format
-  (date-display-format 'rfc2822)
   
   ;; register exit handler to remove lock file
   (exit-handler
@@ -97,18 +109,27 @@ exec racket -u "${0}" ${1+"${@}"}
   
   ;; run with handler to cleanly exit on break
   (with-handlers
-      ([exn:break? handle-break]
+      ([exn:break? handle-break] ; exit handler will delete it
        [exn? (lambda (x)
-               (remove-lock)
-               (raise x))])
+               (remove-lock)     ; exit handler will not delete it
+               (raise x))])      ; since uncaught exceptions don't trigger it
     (let loop ()
       
       ;; call the worker script
+      (define exit-code (system/exit-code "./openoffice.sh"))
       
+      (define timestamp (current-date))
+      
+      ;; generate and write html
       (call-with-atomic-output-file
        (output-file)
-       (output-page (generate-page (system/exit-code "./openoffice.sh")
-                                   (date->string (current-date) #t))))
+       (output-page (generate-page exit-code timestamp)))
+      
+      ;; append to log
+      (with-output-to-file (history-file)
+        #:exists 'append
+        (lambda ()
+          (output-log-line exit-code timestamp)))
       
       (sleep 29)
       (loop))))
