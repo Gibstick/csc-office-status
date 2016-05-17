@@ -128,7 +128,7 @@ exec racket -u "${0}" ${1+"${@}"}
        (output-page (generate-page exit-code timestamp)))
       
       ;; append to log if changed
-      (when (not (= previous-status exit-code))
+      (when (not (equal? previous-status exit-code))
         (with-output-to-file (history-file)
           #:exists 'append
           (lambda ()
