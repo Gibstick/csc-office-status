@@ -115,7 +115,7 @@ exec racket -u "${0}" ${1+"${@}"}
        [exn? (lambda (x)
                (remove-lock)     ; exit handler will not delete it
                (raise x))])      ; since uncaught exceptions don't trigger it
-    (let loop ()
+    (let loop ([previous-status #f])
       
       ;; call the worker script
       (define exit-code (system/exit-code "./openoffice.sh"))
@@ -127,12 +127,13 @@ exec racket -u "${0}" ${1+"${@}"}
        (output-file)
        (output-page (generate-page exit-code timestamp)))
       
-      ;; append to log
-      (with-output-to-file (history-file)
-        #:exists 'append
-        (lambda ()
-          (output-log-line exit-code timestamp)))
+      ;; append to log if changed
+      (when (not (= previous-status exit-code))
+        (with-output-to-file (history-file)
+          #:exists 'append
+          (lambda ()
+            (output-log-line exit-code timestamp))))
       
       (sleep 29)
-      (loop))))
+      (loop exit-code))))
 
