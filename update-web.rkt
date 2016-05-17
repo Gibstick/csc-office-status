@@ -10,6 +10,7 @@ exec racket -u "${0}" ${1+"${@}"}
 (require racket/date)        ; date output
 (require racket/system)      ; system
 (require racket/file)        ; file utils
+(require racket/os)          ; getpid
 
 ;; parameter for lock file
 (define lock-file (make-parameter ".office-lock"))
@@ -97,8 +98,10 @@ exec racket -u "${0}" ${1+"${@}"}
     (displayln "Lock file already exists! Exiting.") 
     (exit 0))
   
-  ;; create lock file
-  (define lock (open-output-file (lock-file)))
+  ;; create lock file, with PID
+  (with-output-to-file (lock-file)
+    (lambda ()
+      (displayln (getpid))))
   
   
   ;; register exit handler to remove lock file
