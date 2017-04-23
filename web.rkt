@@ -129,8 +129,6 @@ create table if not exists office_statuses
 
   (command-line
    #:once-each
-   [("-u" "--url") path "Set the path for the main handler"
-                   (servlet-path path)]
    [("-p" "--port") port "Set the port for the server to listen on"
                     (servlet-port (string->number port))]
    [("-w" "--web-browser") "Launch a web browser pointing to the main entrypoint"
@@ -139,7 +137,7 @@ create table if not exists office_statuses
   ;; serve web page
   (serve/servlet main-route
                  #:listen-ip #f
-                 #:servlet-path (servlet-path)
+                 #:servlet-regexp #rx""
                  #:port (servlet-port)
                  #:command-line? (servlet-command-line)))
 
