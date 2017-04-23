@@ -105,9 +105,10 @@ create table if not exists office_statuses
 
   ;; serve web page
   (serve/servlet main-route
-                 #:servlet-path "/"
-                 #:extra-files-paths
+                 #:listen-ip #f
+                 #:servlet-regexp #rx""
                  #:port 58888
+                 #:extra-files-paths
                  (list (build-path "static"))
                  #:command-line? #t))
 
