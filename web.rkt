@@ -12,6 +12,10 @@ exec racket -u "${0}" ${1+"${@}"}
          web-server/servlet-env)
 (require db)
 (require racket/vector)      ; vector-map
+(require racket/cmdline)
+(require racket/port)        ; port->string
+(require racket/string)
+(require net/base64)
 
 (provide db-path
          init-db!
@@ -22,9 +26,13 @@ exec racket -u "${0}" ${1+"${@}"}
 ;; number of seconds between page refresh
 (define refresh-interval (make-parameter 60))
 ;; path to stylesheet
-(define css-path (make-parameter "style.css"))
+(define css-path (make-parameter "static/style.css"))
 ;; sqlite db
 (define db-path (make-parameter "office_status.db"))
+;; servlet params
+(define servlet-path (make-parameter "/"))
+(define servlet-port (make-parameter 58888))
+(define servlet-command-line (make-parameter #t))
 
 
 ;; status codes
@@ -33,6 +41,16 @@ exec racket -u "${0}" ${1+"${@}"}
 ;; 2 - worker script timed out
 ;; 5 - could not fetch webcam stream
 
+(define css-data-uri ; lol
+  (string-append
+   "data:text/css;charset=utf-8;base64,"
+   (with-output-to-string
+       (lambda ()
+         (with-input-from-file (css-path)
+           (lambda ()
+             (base64-encode-stream (current-input-port) (current-output-port) "")))))))
+#;(with-input-from-file (css-path)
+    (lambda () (base64-encode (port->bytes) "")))
 
 ;; (generate-page status timestamp) produces a string of the page's HTML
 ;;   ready to be written to a file, using the script's return status
@@ -42,7 +60,13 @@ exec racket -u "${0}" ${1+"${@}"}
     (html 'lang: "en"
           (head
            (meta 'http-equiv: "refresh" 'content: (refresh-interval))
-           (element 'link 'rel: "stylesheet" 'href: (css-path))
+           #;(element 'link 'rel: "stylesheet" 'href:
+                      (css-path))
+           (meta 'name: "viewport" 'content: "width=device-width"
+                 'initial-scale: "1.0" 'user-scalable: "yes")
+           #;(style 'type: "text/css"
+                  (minify-css!))
+           (link 'href: css-data-uri 'rel: "stylesheet")
            (title
             (case status
               [(0) "Open"]
@@ -103,12 +127,19 @@ create table if not exists office_statuses
      (lambda (out)
        (output-xml (generate-page status ts) out))))
 
+  (command-line
+   #:once-each
+   [("-u" "--url") path "Set the path for the main handler"
+                   (servlet-path path)]
+   [("-p" "--port") port "Set the port for the server to listen on"
+                    (servlet-port port)]
+   [("-w" "--web-browser") "Launch a web browser pointing to the main entrypoint"
+                           (servlet-command-line #f)])
+
   ;; serve web page
   (serve/servlet main-route
                  #:listen-ip #f
-                 #:servlet-regexp #rx""
-                 #:port 58888
-                 #:extra-files-paths
-                 (list (build-path "static"))
-                 #:command-line? #t))
+                 #:servlet-path (servlet-path)
+                 #:port (servlet-port)
+                 #:command-line? (servlet-command-line)))
 
