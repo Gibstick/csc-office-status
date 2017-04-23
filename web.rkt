@@ -107,6 +107,7 @@ create table if not exists office_statuses
   (serve/servlet main-route
                  #:servlet-path "/"
                  #:extra-files-paths
+                 #:port 58888
                  (list (build-path "static"))
                  #:command-line? #t))
 
