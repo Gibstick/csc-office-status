@@ -11,10 +11,17 @@
 ;; should probably run this in a new thread
 (define (office-status-main! db)
   (define ts (current-seconds))
-  (define-values (subproc _1 _2 _3)
+  (define-values (subproc stdout stdin stderr)
     (subprocess #f #f #f "sh openoffice.sh"))
+
   (sync/timeout 2 subproc)
+
   (define status (subprocess-status subproc))
+  (when (equal? status 'runnning)
+    (subprocess-kill subproc #t))
+  (close-input-port stdout)
+  (close-input-port stderr)
+  (close-output-port stdin)
   (insert-office-status! db (if (equal? status 'running) 2 status) ts)
   status)
 
