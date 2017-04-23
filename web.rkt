@@ -132,7 +132,7 @@ create table if not exists office_statuses
    [("-u" "--url") path "Set the path for the main handler"
                    (servlet-path path)]
    [("-p" "--port") port "Set the port for the server to listen on"
-                    (servlet-port port)]
+                    (servlet-port (string->number port))]
    [("-w" "--web-browser") "Launch a web browser pointing to the main entrypoint"
                            (servlet-command-line #f)])
 
