@@ -11,6 +11,7 @@ exec racket -u "${0}" ${1+"${@}"}
 (require web-server/servlet  ; server stuff
          web-server/servlet-env)
 (require db)
+(require racket/vector)      ; vector-map
 
 (provide db-path
          init-db!
@@ -56,15 +57,17 @@ exec racket -u "${0}" ${1+"${@}"}
               [(0) "Yes."]
               [(1) "No."]
               [(5) "Unknown. Could not fetch webcam stream."]
+              [(#f) "No data yet. Is the worker script running?"]
               [else (format "Unknown. Script exited with status ~a." status)])
             )
-           (div 'class: "footer"
-                (p (format "Last checked: ~a"
-                           (date->string (seconds->date timestamp) #t)))
-                (let ([time-diff (- (current-seconds) timestamp)])
-                  (when (> time-diff (* 5 (sleep-interval)))
-                    (p (format "Note: No updates since ~a seconds ago"
-                               time-diff)))))
+           (when timestamp
+             (div 'class: "footer"
+                  (p (format "Last checked: ~a"
+                             (date->string (seconds->date timestamp) #t)))
+                  (let ([time-diff (- (current-seconds) timestamp)])
+                    (when (> time-diff (* 5 (sleep-interval)))
+                      (p (format "Note: No updates since ~a seconds ago"
+                                 time-diff))))))
            )
           )
     ))
@@ -80,7 +83,9 @@ create table if not exists office_statuses
 
 ;; query the latest office status from the db
 (define (latest-office-status db)
-  (query-maybe-row db "select status, max(ts) from office_statuses"))
+  (vector-map
+   sql-null->false
+   (query-maybe-row db "select status, max(ts) from office_statuses")))
 
 
 (module+ main
@@ -93,6 +98,7 @@ create table if not exists office_statuses
       (latest-office-status db))
     (define status (and row (vector-ref row 0)))
     (define ts (and row (vector-ref row 1)))
+    (eprintf "status, ts: ~a, ~a\n" status ts)
     (response/output
      (lambda (out)
        (output-xml (generate-page status ts) out))))
