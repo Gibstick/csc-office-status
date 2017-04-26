@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="refresh" content="30" />
+    <link rel="stylesheet" href="{{ css_url }}" />
+    <title>{{ title }}</title>
+  </head>
+  <body>
+    <h1>Is the CSC office open?</h1>
+    <p>{{ open_text }}</p>
+    <div class="footer">
+      <p>Last checked: {{ last_checked }}</p>
+      {%-if last_checked_seconds %}
+      <p>Note: no updates since {{ last_checked_seconds }}s ago</p>
+      {% endif -%}
+    </div>
+  </body>
+</html>
