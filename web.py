@@ -109,7 +109,7 @@ def fetch_last_status_change(db_conn):
 def main_route():
     db_conn = sqlite3.connect("office_status.db")
     office_status, timestamp = fetch_status(db_conn)
-    since_timestamp = fetch_last_status_change(db_conn, office_status)
+    since_timestamp = fetch_last_status_change(db_conn)
     context = office_status_context(office_status, timestamp, since_timestamp)
     return render_template("main.html", **context)
 
