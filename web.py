@@ -62,7 +62,6 @@ def office_status_context(status, timestamp, since_timestamp):
             .strftime(DATE_FORMAT)
         since_text = (since_text_prefix.get(status) or "Broken since") \
             + " " + since_date
-        print(since_date)
     else:
         since_text = None
 
