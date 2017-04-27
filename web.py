@@ -75,11 +75,13 @@ def fetch_status(db_conn):
 
     Always returns a tuple, but the tuple might contain None values.
     '''
-    cursor = db_conn.cursor()
-    cursor.execute("select status, max(ts) from office_statuses")
-    # if we have no results, return a tuple of None, None
-    return cursor.fetchone() or (None, None)
-
+    try:
+        cursor = db_conn.cursor()
+        cursor.execute("select status, max(ts) from office_statuses")
+        # if we have no results, return a tuple of None, None
+        return cursor.fetchone() or (None, None)
+    except sqlite3.Error:
+        return (None, None)
 
 @app.route('/')
 def main_route():
