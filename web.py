@@ -91,7 +91,8 @@ def main_route():
     return render_template("main.html", **context)
 
 def dummy(env, resp):
-    resp(b'200 OK', [('Content-Type', 'text/plain')])
+    # TODO: send a better response
+    resp('200 OK', [('Content-Type', 'text/plain')])
     return [b"This is not the route you're looking for."]
 
 
