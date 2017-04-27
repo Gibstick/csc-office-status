@@ -10,9 +10,9 @@ cleanup () {
 trap cleanup exit 
 
 main () {
-    timeout 1.50s wget -N -q http://bit-shifter:8081/ -O $outputfile 
+    timeout 2.0s wget -N -q http://bit-shifter:8081/ -O $outputfile 
     set -e
-    
+
     # guard against empty file
     if [ ! -s $outputfile ]; then
         echo "Could not fetch webcam stream." 1>&2
