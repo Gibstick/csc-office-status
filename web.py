@@ -50,7 +50,7 @@ def office_status_context(status, timestamp):
 
     if timestamp:
         last_checked = datetime \
-            .utcfromtimestamp(timestamp) \
+            .fromtimestamp(timestamp) \
             .strftime('%Y-%m-%d %H:%M:%S')
     else:
         last_checked = 'No data.'
@@ -58,7 +58,7 @@ def office_status_context(status, timestamp):
 
     current_time = datetime.now().timestamp()
     if timestamp and current_time - timestamp > WARNING_THRESHOLD:
-        last_checked_seconds = round(datetime.now().timestamp() - timestamp)
+        last_checked_seconds = round(current_time - timestamp)
     else:
         last_checked_seconds = None
 
