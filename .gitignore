@@ -1,1 +1,5 @@
 office_status.db
+*.swp
+openoffice-fake.sh
+__pycache__/
+.DS_STORE
