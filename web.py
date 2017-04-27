@@ -7,11 +7,15 @@ from datetime import datetime
 
 import click # for command-line initdb
 from flask import Flask, render_template, url_for, Blueprint
+from werkzeug.serving import run_simple
+from werkzeug.wsgi import DispatcherMiddleware
+
 
 WARNING_THRESHOLD = 600
+PREFIX = os.getenv('OFFICE_STATUS_PREFIX', '/')
 
-bp = Blueprint('homedir_prefix', __name__, template_folder='templates')
 app = Flask(__name__)
+app.config["APPLICATION_ROOT"] = PREFIX
 
 @app.cli.command()
 def initdb():
@@ -77,13 +81,21 @@ def fetch_status(db_conn):
     # if we have no results, return a tuple of None, None
     return cursor.fetchone() or (None, None)
 
-DB_CONN = sqlite3.connect("office_status.db")
 
-@bp.route('/')
+@app.route('/')
 def main_route():
     "main app route"
-    status = fetch_status(DB_CONN)
+    db_conn = sqlite3.connect("office_status.db")
+    status = fetch_status(db_conn)
     context = office_status_context(*status)
     return render_template("main.html", **context)
 
-app.register_blueprint(bp, url_prefix=os.getenv('OFFICE_STATUS_PREFIX', '/'))
+def dummy(env, resp):
+    resp(b'200 OK', [(b'Content-Type', b'text/plain')])
+    return [b'Hello WSGI World']
+
+app.wsgi_app = DispatcherMiddleware(dummy, {PREFIX : app.wsgi_app})
+
+
+if __name__ == '__main__':
+    run_simple('localhost', 58888, app, use_reloader=True)
