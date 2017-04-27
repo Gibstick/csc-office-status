@@ -77,7 +77,7 @@ def fetch_status(db_conn):
     Always returns a tuple, but the tuple might contain None values.
     """
     cursor = db_conn.cursor()
-    cursor.execute("select status, ts from office_statuses")
+    cursor.execute("select status, max(ts) from office_statuses")
     # if we have no results, return a tuple of None, None
     return cursor.fetchone() or (None, None)
 
