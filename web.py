@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 
 import click # for command-line initdb
-from flask import Flask, render_template, url_for, Blueprint
+from flask import Flask, render_template, url_for
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
