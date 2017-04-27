@@ -12,29 +12,20 @@ from werkzeug.wsgi import DispatcherMiddleware
 
 WARNING_THRESHOLD = 600
 PREFIX = os.getenv('OFFICE_STATUS_PREFIX', '/')
+DATE_FORMAT = '%B %d, %Y %H:%M:%S'
 
 app = Flask(__name__)
 app.config["APPLICATION_ROOT"] = PREFIX
 
-@app.cli.command()
-def initdb():
-    '''Initialize the database.'''
-    db_conn = sqlite3.connect("office_status.db")
-    cursor = db_conn.cursor()
-    cursor.execute('''
-    create table if not exists office_statuses(status INTEGER, ts INTEGER)
-    ''')
-    db_conn.commit()
-    db_conn.close()
 
-
-def office_status_context(status, timestamp):
+def office_status_context(status, timestamp, since_timestamp):
     '''Return a dict of context for rendering
     the main template.
 
     Params:
         - status: a status code as an integer, or false
         - timestamp: a unix timestamp as an integer
+        - last_open_timestamp: timestamp of when the office was last open
     '''
     title = {
         0 : 'Open.',
@@ -46,11 +37,15 @@ def office_status_context(status, timestamp):
         5 : 'Unknown. Could not fetch webcam stream.',
         None : 'No data yet.'
     }
+    since_text_prefix = {
+        0 : 'Open since',
+        1 : 'Closed since',
+    }
 
     if timestamp:
         last_checked = datetime \
             .fromtimestamp(timestamp) \
-            .strftime('%Y-%m-%d %H:%M:%S')
+            .strftime(DATE_FORMAT)
     else:
         last_checked = 'No data.'
 
@@ -61,6 +56,16 @@ def office_status_context(status, timestamp):
     else:
         last_checked_seconds = None
 
+    if since_timestamp:
+        since_date = datetime \
+            .fromtimestamp(since_timestamp) \
+            .strftime(DATE_FORMAT)
+        since_text = (since_text_prefix.get(status) or "Broken since") \
+            + " " + since_date
+        print(since_date)
+    else:
+        since_text = None
+
 
     return {
         'title' : title.get(status) or "Unknown.",
@@ -68,6 +73,7 @@ def office_status_context(status, timestamp):
         'last_checked' : last_checked,
         'css_url' : url_for('static', filename='style.css'),
         'last_checked_seconds' : last_checked_seconds,
+        'since_text' : since_text
     }
 
 def fetch_status(db_conn):
@@ -83,11 +89,29 @@ def fetch_status(db_conn):
     except sqlite3.Error:
         return (None, None)
 
+def fetch_last_status_change(db_conn, status):
+    '''Query for the last time the status changed
+
+    Returns None if nothing was found
+    '''
+    try:
+        cursor = db_conn.cursor()
+        cursor.execute("select max(ts) from office_status_deltas")
+        result = cursor.fetchone()
+        if result:
+            return result[0]
+        else:
+            return None
+    except sqlite3.Error:
+        return None
+
+
 @app.route('/')
 def main_route():
     db_conn = sqlite3.connect("office_status.db")
-    status = fetch_status(db_conn)
-    context = office_status_context(*status)
+    office_status, timestamp = fetch_status(db_conn)
+    since_timestamp = fetch_last_status_change(db_conn, office_status)
+    context = office_status_context(office_status, timestamp, since_timestamp)
     return render_template("main.html", **context)
 
 def dummy(env, resp):

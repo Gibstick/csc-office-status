@@ -8,6 +8,9 @@
   <body>
     <h1>Is the CSC office open?</h1>
     <p>{{ open_text }}</p>
+    {%- if since_text %}
+    <p>{{ since_text }}</p>
+    {% endif -%}
     <div class="footer">
       <p>Last checked: {{ last_checked }}</p>
       {%-if last_checked_seconds %}
