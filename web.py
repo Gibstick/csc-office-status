@@ -91,10 +91,14 @@ def main_route():
     return render_template("main.html", **context)
 
 def dummy(env, resp):
-    resp(b'200 OK', [(b'Content-Type', b'text/plain')])
-    return [b'Hello WSGI World']
+    resp(b'200 OK', [('Content-Type', 'text/plain')])
+    return [b"This is not the route you're looking for."]
 
-app.wsgi_app = DispatcherMiddleware(dummy, {PREFIX : app.wsgi_app})
+
+# need to check for this or else we get infinite redirects
+# and the app won't work on /
+if PREFIX != '/':
+    app.wsgi_app = DispatcherMiddleware(dummy, {PREFIX : app.wsgi_app})
 
 
 if __name__ == '__main__':
