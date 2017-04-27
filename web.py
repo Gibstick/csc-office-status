@@ -1,6 +1,6 @@
-"""
+'''
 Simple web app for serving office status page.
-"""
+'''
 import sqlite3
 import os
 from datetime import datetime
@@ -19,7 +19,7 @@ app.config["APPLICATION_ROOT"] = PREFIX
 
 @app.cli.command()
 def initdb():
-    """Initialize the database."""
+    '''Initialize the database.'''
     db_conn = sqlite3.connect("office_status.db")
     cursor = db_conn.cursor()
     cursor.execute('''
@@ -30,13 +30,13 @@ def initdb():
 
 
 def office_status_context(status, timestamp):
-    """Return a dict of context for rendering
+    '''Return a dict of context for rendering
     the main template.
 
     Params:
         - status: a status code as an integer, or false
         - timestamp: a unix timestamp as an integer
-    """
+    '''
     title = {
         0 : 'Open.',
         1 : 'Closed.',
@@ -72,10 +72,10 @@ def office_status_context(status, timestamp):
     }
 
 def fetch_status(db_conn):
-    """Fetch latest status from the database.
+    '''Fetch latest status from the database.
 
     Always returns a tuple, but the tuple might contain None values.
-    """
+    '''
     cursor = db_conn.cursor()
     cursor.execute("select status, max(ts) from office_statuses")
     # if we have no results, return a tuple of None, None
@@ -84,7 +84,6 @@ def fetch_status(db_conn):
 
 @app.route('/')
 def main_route():
-    "main app route"
     db_conn = sqlite3.connect("office_status.db")
     status = fetch_status(db_conn)
     context = office_status_context(*status)
