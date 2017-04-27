@@ -1,14 +1,16 @@
 """
 Simple web app for serving office status page.
 """
-import click # for command-line initdb
-from datetime import datetime
-from flask import Flask, render_template, url_for
 import sqlite3
+import os
+from datetime import datetime
+
+import click # for command-line initdb
+from flask import Flask, render_template, url_for, Blueprint
 
 WARNING_THRESHOLD = 600
 
-
+bp = Blueprint('homedir_prefix', __name__, template_folder='templates')
 app = Flask(__name__)
 
 @app.cli.command()
@@ -77,9 +79,11 @@ def fetch_status(db_conn):
 
 DB_CONN = sqlite3.connect("office_status.db")
 
-@app.route('/')
+@bp.route('/')
 def main_route():
     "main app route"
     status = fetch_status(DB_CONN)
     context = office_status_context(*status)
     return render_template("main.html", **context)
+
+app.register_blueprint(bp, url_prefix=os.getenv('OFFICE_STATUS_PREFIX', '/'))
