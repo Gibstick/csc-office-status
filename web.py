@@ -89,7 +89,7 @@ def fetch_status(db_conn):
     except sqlite3.Error:
         return (None, None)
 
-def fetch_last_status_change(db_conn, status):
+def fetch_last_status_change(db_conn):
     '''Query for the last time the status changed
 
     Returns None if nothing was found
