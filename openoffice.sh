@@ -4,13 +4,13 @@ outputfile=$(mktemp -p .)
 frame=$(mktemp -p .)
 
 cleanup () {
-    rm $outputfile 
-    rm $frame 
+    rm $outputfile
+    rm $frame
 }
-trap cleanup exit 
+trap cleanup exit
 
 main () {
-    timeout 2.0s wget -N -q http://bit-shifter:8081/ -O $outputfile 
+    timeout 2.5s wget -N -q http://bit-shifter:8081/ -O $outputfile
     set -e
 
     # guard against empty file
@@ -20,7 +20,7 @@ main () {
     fi
 
     boundary=$(awk '/--BoundaryString/{ print NR; }' ${outputfile} | sed -n 2p)
-    sed -n 5,${boundary}p ${outputfile} | head -n -1 > $frame 
+    sed -n 5,${boundary}p ${outputfile} | head -n -1 > $frame
 
     brightness=$(convert ${frame} -colorspace gray -format  "%[fx:floor(100*mean)]" info:)
 
