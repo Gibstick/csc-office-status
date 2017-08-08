@@ -1,1 +1,0 @@
-* * * * * /usr/bin/ffmpeg -f video4linux2 -s 640x480 -i /dev/csc/bitshifter-cam -ss 0:0:2 -frames 1 /users/s455wang/bit-shifter-webcam/frame.jpg >/dev/null 2>&1
